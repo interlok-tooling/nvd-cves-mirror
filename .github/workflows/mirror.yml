@@ -23,6 +23,6 @@ jobs:
       
     - name: Update Nightly Known Exploited Vulnerabilities Release
       run: |
-        gh release upload nightly './nvd_cves.json' --clobber
+        gh release upload regular './nvd_cves.json' --clobber
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
