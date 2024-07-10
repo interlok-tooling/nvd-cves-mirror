@@ -1,0 +1,28 @@
+# This is a regular build that will fetch the data returned by https://services.nvd.nist.gov/rest/json/cves/2.0 and saved it to this project
+# This will allows other prrojects to use this data
+
+name: Mirror NVD CVEs JSON
+
+on:
+  schedule:
+    - cron: 0 */4 * * * # Every 4 hours
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Get Known Exploited Vulnerabilities JSON
+      run: |
+         curl -L https://services.nvd.nist.gov/rest/json/cves/2.0 --output nvd_cves.json
+      shell: bash
+      
+    - name: Update Nightly Known Exploited Vulnerabilities Release
+      run: |
+        gh release upload nightly './nvd_cves.json' --clobber
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
