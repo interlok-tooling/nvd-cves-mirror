@@ -10,7 +10,7 @@ dependencies {
 dependencyCheck  {
   nvd {
     apiKey=System.getenv("NVD_API_KEY")
-	delay=30000
+	delay=60000
   }
   analyzers {
     assemblyEnabled=false
