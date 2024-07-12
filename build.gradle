@@ -15,6 +15,8 @@ dependencyCheck  {
   analyzers {
     assemblyEnabled=false
     knownExploitedURL=project.findProperty('dependencyCheckKnownExploitedURL')
-    directory=project.findProperty('dependencyCheckDirectory') ?: './dependency-check-data'
+  }
+  data {
+    directory=project.findProperty('dependencyCheckDirectory')
   }
 }
