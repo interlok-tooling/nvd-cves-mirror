@@ -25,7 +25,6 @@ jobs:
       with:
         gradle-version: wrapper
     - name: Get Gradle Dependency Check CVE Data
-      if: ${{ inputs.disable-dependency-check != true && github.actor == 'dependabot[bot]' }}
       run: ./gradlew -Dorg.gradle.jvmargs=-Xmx1g -Djava.security.egd=file:/dev/./urandom -Dorg.gradle.console=plain --no-daemon dependencyCheckAnalyze -PdependencyCheckDirectory='./dependency-check-data'
       env:
         NVD_API_KEY: ${{ secrets.NVD_API_KEY }}  
