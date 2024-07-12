@@ -1,0 +1,20 @@
+plugins {
+  id "java-library"
+  id "org.owasp.dependencycheck" version "9.2.0"
+}
+
+
+dependencies {
+}
+
+dependencyCheck  {
+  nvd {
+    apiKey=System.getenv("NVD_API_KEY")
+	delay=20000
+  }
+  analyzers {
+    assemblyEnabled=false
+    knownExploitedURL=project.findProperty('dependencyCheckKnownExploitedURL')
+    directory=project.findProperty('dependencyCheckDirectory')
+  }
+}
