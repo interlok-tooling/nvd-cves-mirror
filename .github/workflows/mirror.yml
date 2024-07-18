@@ -33,7 +33,7 @@ jobs:
         NVD_API_KEY: ${{ secrets.NVD_API_KEY }}  
     - name: Update CVE Data
       run: |
-         ls -l /home/runner/.gradle/
+         ls -l /home/runner/.gradle/caches
 #        gh release upload regular '/home/runner/.gradle/dependency-check-data/9.0/*' --clobber
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
