@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: gh-pages
+          ref: nvd-cache
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
@@ -35,4 +35,4 @@ jobs:
           git config user.email "<>"
           git add ./nvd_api_cache/
           git commit -am 'chore: update'
-          git push origin gh-pages --force
+          git push origin nvd-cache --force
