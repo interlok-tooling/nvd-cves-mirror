@@ -25,7 +25,7 @@ jobs:
       with:
         gradle-version: wrapper
     - name: Get Gradle Dependency Check CVE Data
-      run: ./gradlew -Dorg.gradle.jvmargs=-Xmx1g -Djava.security.egd=file:/dev/./urandom -Dorg.gradle.console=plain --no-daemon --stacktrace --debug dependencyCheckUpdate -PdatafeedUrl=https://raw.githubusercontent.com/interlok-tooling/nvd-cves-mirror/nvd-cache/nvd_api_cache
+      run: ./gradlew -Dorg.gradle.jvmargs=-Xmx1g -Djava.security.egd=file:/dev/./urandom -Dorg.gradle.console=plain --no-daemon --stacktrace --debug dependencyCheckUpdate -PnvdDatafeedUrl=https://raw.githubusercontent.com/interlok-tooling/nvd-cves-mirror/nvd-cache/nvd_api_cache
       env:
         NVD_API_KEY: ${{ secrets.NVD_API_KEY }}  
     - name: Update CVE Data
