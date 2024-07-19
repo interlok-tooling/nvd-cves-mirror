@@ -1,5 +1,7 @@
 # NVD API CVEs Cache
 
+[![NVD API Cache](https://github.com/interlok-tooling/nvd-cves-mirror/actions/workflows/nvd-cache.yml/badge.svg)](https://github.com/interlok-tooling/nvd-cves-mirror/actions/workflows/nvd-cache.yml)
+
 Use https://github.com/jeremylong/Open-Vulnerability-Project vulnz.jar (same author as the gradle dependency check plugin) to cache data from [NVD API](https://services.nvd.nist.gov/rest/json/cves/2.0).
 The data from the API is transfomed into data feed and added to [this project nvd-cache branch](https://github.com/interlok-tooling/nvd-cves-mirror/tree/nvd-cache).
 A github action run every 8 hours to update the data from [NVD API](https://services.nvd.nist.gov/rest/json/cves/2.0) and requires the `NVD_API_KEY` secrets
