@@ -24,7 +24,7 @@ jobs:
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: |
-          curl https://github.com/jeremylong/Open-Vulnerability-Project/releases/download/v6.1.6/vulnz-6.1.6.jar -s -L -o vulnz.jar
+          curl https://github.com/jeremylong/Open-Vulnerability-Project/releases/download/v6.1.7/vulnz-6.1.7.jar -s -L -o vulnz.jar
           git reset --soft HEAD~1
           ls -la .
           java -jar vulnz.jar cve --cache --directory ./nvd_api_cache  --threads=1 --debug --delay=8000
