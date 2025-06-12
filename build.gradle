@@ -7,15 +7,10 @@ dependencies {
 }
 
 dependencyCheck  {
-  nvd {
-    apiKey=System.getenv("NVD_API_KEY")
-    datafeedUrl=project.findProperty('nvdDatafeedUrl')
-  }
-  analyzers {
-    assemblyEnabled=false
-    knownExploitedURL=project.findProperty('dependencyCheckKnownExploitedURL')
-  }
-  data {
-    directory=project.findProperty('dependencyCheckDirectory')
-  }
+  nvd.apiKey=System.getenv("NVD_API_KEY")
+  nvd.datafeedUrl=project.findProperty('nvdDatafeedUrl')
+
+  analyzers.assemblyEnabled=false
+  analyzers.kev.url=project.findProperty('dependencyCheckKnownExploitedURL')
+  data.directory=project.findProperty('dependencyCheckDirectory')
 }
