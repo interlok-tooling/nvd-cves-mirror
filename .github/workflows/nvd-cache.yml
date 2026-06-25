@@ -1,9 +1,12 @@
 name: NVD API Cache
 on:
   schedule:
-    - cron:  0 */8 * * * # Every 8 hours
+    - cron: '0 */8 * * *' # Every 8 hours
   workflow_dispatch:
   # Needed so we can run it manually
+
+# CVE data sourced from VulnCheck NVD++ (https://vulncheck.com/nvd2)
+# A free community service provided by VulnCheck Inc.
 
 jobs:
   build:
@@ -16,42 +19,56 @@ jobs:
         with:
           fetch-depth: 0
           ref: nvd-cache
-      - uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-      - name: update
+      - name: Download NVD cache from VulnCheck NVD++
         env:
-          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
-          JAVA_OPTS: "-Xmx4g -XX:+UseStringDeduplication"
+          VULNCHECK_API_TOKEN: ${{ secrets.VULNCHECK_API_TOKEN }}
         run: |
-          curl https://github.com/jeremylong/Open-Vulnerability-Project/releases/download/v6.1.7/vulnz-6.1.7.jar -s -L -o vulnz.jar
+          set -euo pipefail
+
+          if [ -z "${VULNCHECK_API_TOKEN:-}" ]; then
+            echo "VULNCHECK_API_TOKEN is not configured."
+            exit 1
+          fi
+
           git reset --soft HEAD~1
-          ls -la .
 
-          MAX_ATTEMPTS=10
-          ATTEMPT=1
-          while true; do
-            echo "[Attempt $ATTEMPT/$MAX_ATTEMPTS] Running vulnz..."
-            if java -jar vulnz.jar cve --cache --directory ./nvd_api_cache --threads=1 --debug --delay=8000; then
-              echo "vulnz succeeded on attempt $ATTEMPT."
-              break
-            else
-              if [ $ATTEMPT -ge $MAX_ATTEMPTS ]; then
-                echo "Max retry attempts ($MAX_ATTEMPTS) reached. Giving up."
-                exit 1
-              fi
-              echo "vulnz failed (exit code $?). Retrying in 30 seconds..."
-              sleep 30
-              ATTEMPT=$((ATTEMPT + 1))
-            fi
-          done
+          echo "Fetching backup index from VulnCheck NVD++..."
+          BACKUP_INDEX=$(curl -sf \
+            --url https://api.vulncheck.com/v3/backup/nist-nvd2 \
+            --header 'Accept: application/json' \
+            --header "Authorization: Bearer ${VULNCHECK_API_TOKEN}")
 
-          rm vulnz.jar
-          git status
-          cat nvd_api_cache/cache.properties
+          echo "Clearing existing cache..."
+          rm -rf ./nvd_api_cache
+          mkdir -p ./nvd_api_cache
+
+          echo "Downloading backup files..."
+          echo "$BACKUP_INDEX" | \
+            jq -r '.data[].url' | \
+            while read -r url; do
+              echo "Downloading: $url"
+              filename=$(basename "$url")
+              curl -sf \
+                --header "Authorization: Bearer ${VULNCHECK_API_TOKEN}" \
+                -o "./nvd_api_cache/${filename}" \
+                "$url"
+            done
+
+          cat <<'EOF' > README.md
+          ## Data Source
+
+          CVE data in this cache is sourced from [VulnCheck NVD++](https://vulncheck.com/nvd2),
+          a free community service provided by VulnCheck Inc., which provides reliable access
+          to NIST National Vulnerability Database (NVD) data.
+
+          Original CVE data © NIST National Vulnerability Database (https://nvd.nist.gov).
+          EOF
+
+          echo "Download complete."
+          ls -lh ./nvd_api_cache/
+
           git config user.name "Interlok Dev"
           git config user.email "<>"
-          git add ./nvd_api_cache/
-          git commit -am 'chore: update'
+          git add ./nvd_api_cache/ README.md
+          git commit -m 'chore: update' || echo "No changes to commit."
           git push origin nvd-cache --force
