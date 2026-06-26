@@ -16,7 +16,7 @@ Migrate the NVD cache mirror workflow away from the NIST NVD 2.0 paginated API a
 
 - Working branch: `vulncheck`
 - Remote branch: `origin/vulncheck`
-- Latest migration commit: `f550045` (`chore: migrate NVD cache to VulnCheck`)
+- Latest migration commit: `d05cf64` (`feat: add vulncheck canary feed converter`)
 - Repository secret `VULNCHECK_API_TOKEN` has already been configured in GitHub Actions
 - The workflow file has been replaced on the branch and validates cleanly in the editor
 - A local converter script has now been added to transform VulnCheck backup ZIP files into a Dependency Check-compatible feed layout
@@ -76,6 +76,7 @@ The following implementation work has now been done on branch `vulncheck`:
    - files are grouped by CVE `published` year
    - anything published before 2002 is folded into `nvdcve-2002.json.gz`
 5. The branch workflow `.github/workflows/nvd-cache.yml` now builds a canary feed and pushes it to `nvd-cache-vulncheck`
+6. These changes have been committed and pushed to `origin/vulncheck`
 
 ## Local Validation Added On 2026-06-26
 
