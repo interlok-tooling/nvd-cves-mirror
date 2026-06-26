@@ -1,25 +1,28 @@
-name: NVD API Cache
+name: NVD API Cache VulnCheck Canary
 on:
   schedule:
     - cron: '0 */8 * * *' # Every 8 hours
   workflow_dispatch:
-  # Needed so we can run it manually
+  # Manual runs are the main path while this lives on a non-default branch.
 
-# CVE data sourced from VulnCheck NVD++ (https://vulncheck.com/nvd2)
-# A free community service provided by VulnCheck Inc.
+# This workflow builds a Dependency Check-compatible canary feed from
+# VulnCheck NVD++ and publishes it to the nvd-cache-vulncheck branch.
 
 jobs:
   build:
     permissions:
       contents: write
-    name: Update NVD API Cache
+    name: Update VulnCheck Canary Cache
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: nvd-cache
-      - name: Download NVD cache from VulnCheck NVD++
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build Dependency Check-compatible canary feed
         env:
           VULNCHECK_API_TOKEN: ${{ secrets.VULNCHECK_API_TOKEN }}
         run: |
@@ -30,45 +33,55 @@ jobs:
             exit 1
           fi
 
-          git reset --soft HEAD~1
+          OUTPUT_BRANCH="nvd-cache-vulncheck"
+          WORK_DIR="$(mktemp -d)"
+          OUTPUT_WORKTREE="${WORK_DIR}/output-branch"
+          GENERATED_DIR="${WORK_DIR}/generated"
+          DOWNLOAD_DIR="${WORK_DIR}/downloads"
+          PREVIOUS_CACHE_DIR=""
 
-          echo "Fetching backup index from VulnCheck NVD++..."
-          BACKUP_INDEX=$(curl -sf \
-            --url https://api.vulncheck.com/v3/backup/nist-nvd2 \
-            --header 'Accept: application/json' \
-            --header "Authorization: Bearer ${VULNCHECK_API_TOKEN}")
+          if git ls-remote --exit-code --heads origin "${OUTPUT_BRANCH}" >/dev/null 2>&1; then
+            git fetch origin "${OUTPUT_BRANCH}:${OUTPUT_BRANCH}"
+            git worktree add "${OUTPUT_WORKTREE}" "${OUTPUT_BRANCH}"
+            PREVIOUS_CACHE_DIR="${OUTPUT_WORKTREE}/nvd_api_cache"
+          else
+            git worktree add --detach "${OUTPUT_WORKTREE}"
+            (
+              cd "${OUTPUT_WORKTREE}"
+              git checkout --orphan "${OUTPUT_BRANCH}"
+              git rm -rf . >/dev/null 2>&1 || true
+            )
+          fi
 
-          echo "Clearing existing cache..."
-          rm -rf ./nvd_api_cache
-          mkdir -p ./nvd_api_cache
+          if [ -n "${PREVIOUS_CACHE_DIR}" ] && [ -d "${PREVIOUS_CACHE_DIR}" ]; then
+            python scripts/convert_vulncheck_feed.py \
+              --api-token "${VULNCHECK_API_TOKEN}" \
+              --download-dir "${DOWNLOAD_DIR}" \
+              --output-dir "${GENERATED_DIR}" \
+              --previous-cache-dir "${PREVIOUS_CACHE_DIR}" \
+              --branch-readme-mode canary
+          else
+            python scripts/convert_vulncheck_feed.py \
+              --api-token "${VULNCHECK_API_TOKEN}" \
+              --download-dir "${DOWNLOAD_DIR}" \
+              --output-dir "${GENERATED_DIR}" \
+              --branch-readme-mode canary
+          fi
 
-          echo "Downloading backup files..."
-          echo "$BACKUP_INDEX" | \
-            jq -r '.data[].url' | \
-            while read -r url; do
-              echo "Downloading: $url"
-              filename=$(basename "$url")
-              curl -sf \
-                --header "Authorization: Bearer ${VULNCHECK_API_TOKEN}" \
-                -o "./nvd_api_cache/${filename}" \
-                "$url"
-            done
+          cd "${OUTPUT_WORKTREE}"
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -R "${GENERATED_DIR}/nvd_api_cache" .
+          cp "${GENERATED_DIR}/README.md" .
 
-          cat <<'EOF' > README.md
-          ## Data Source
-
-          CVE data in this cache is sourced from [VulnCheck NVD++](https://vulncheck.com/nvd2),
-          a free community service provided by VulnCheck Inc., which provides reliable access
-          to NIST National Vulnerability Database (NVD) data.
-
-          Original CVE data © NIST National Vulnerability Database (https://nvd.nist.gov).
-          EOF
-
-          echo "Download complete."
-          ls -lh ./nvd_api_cache/
+          echo "Canary feed contents prepared."
+          ls -lh ./nvd_api_cache/ | sed -n '1,20p'
 
           git config user.name "Interlok Dev"
           git config user.email "<>"
           git add ./nvd_api_cache/ README.md
-          git commit -m 'chore: update' || echo "No changes to commit."
-          git push origin nvd-cache --force
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m 'chore: update vulncheck canary cache'
+          git push origin HEAD:${OUTPUT_BRANCH} --force-with-lease

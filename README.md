@@ -5,7 +5,9 @@
 
 This repository mirrors CVE cache data onto the `nvd-cache` branch for downstream Dependency Check consumers.
 
-The cache is refreshed every 8 hours by GitHub Actions using [VulnCheck NVD++](https://vulncheck.com/nvd2), a free community service provided by VulnCheck Inc. The workflow downloads the published NVD 2.0 backup files directly into `nvd_api_cache` and requires the `VULNCHECK_API_TOKEN` repository secret.
+On `main`, the production mirror remains the existing `nvd-cache` feed.
+
+On the `vulncheck` branch, the `NVD API Cache VulnCheck Canary` workflow builds an experimental Dependency Check-compatible feed from [VulnCheck NVD++](https://vulncheck.com/nvd2) and publishes it to the `nvd-cache-vulncheck` branch. That workflow requires the `VULNCHECK_API_TOKEN` repository secret.
 
 Other projects can use the mirrored feed by setting `datafeedUrl` to `https://raw.githubusercontent.com/interlok-tooling/nvd-cves-mirror/nvd-cache/nvd_api_cache/`:
 
@@ -19,4 +21,10 @@ dependencyCheck  {
 }
 ```
 
-The `nvd-cache` branch also contains a short attribution `README.md` to satisfy VulnCheck community usage requirements.
+For canary testing against the VulnCheck conversion branch, use:
+
+```
+https://raw.githubusercontent.com/interlok-tooling/nvd-cves-mirror/nvd-cache-vulncheck/nvd_api_cache/
+```
+
+The output branches contain a short attribution `README.md` to satisfy VulnCheck community usage requirements.
